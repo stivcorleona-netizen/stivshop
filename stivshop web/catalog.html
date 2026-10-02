@@ -1,0 +1,154 @@
+
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#111111">
+  <title>Katalog — STIVSHOP</title>
+  <link rel="stylesheet" href="stivshop.css">
+</head>
+<body class="catalog-page">
+
+<header class="navbar">
+  <a class="logo" href="index.html" aria-label="STIVSHOP bosh sahifa"><span>ST</span>IVSHOP</a>
+
+  <nav class="main-nav" aria-label="Asosiy navigatsiya">
+    <a href="index.html">Asosiy sahifa</a>
+    <a href="catalog.html">Katalog</a>
+    <a href="index.html#about">Biz haqimizda</a>
+    <a href="index.html#contact">Aloqa</a>
+  </nav>
+
+  <button class="cart" id="open-cart" type="button" aria-controls="cart-panel">
+    🛒 Savat (<span id="cart-count">0</span>)
+  </button>
+
+  <aside id="cart-panel" class="cart-panel" aria-label="Savat">
+    <div class="cart-heading">
+      <h2>Savat</h2>
+      <button id="close-cart" class="icon-button" type="button" aria-label="Savatni yopish">✕</button>
+    </div>
+    <div id="cart-items"></div>
+    <p id="cart-total">Jami: 0 so'm</p>
+    <button id="order-button" class="black-button" type="button">
+      Buyurtma berish
+    </button>
+  </aside>
+</header>
+
+<main class="catalog-main">
+  <section class="catalog-heading">
+    <p class="small-title">STIVSHOP COLLECTION</p>
+    <h1>Bizning katalog</h1>
+    <p>O‘zingga mos mahsulotni tanla.</p>
+  </section>
+
+  <section class="catalog-section">
+    <div class="category-list" id="category-list">
+      <button class="category-btn active" type="button" data-category="all">Barchasi</button>
+      <button class="category-btn" type="button" data-category="clothes">Kiyimlar</button>
+      <button class="category-btn" type="button" data-category="shoes">Oyoq kiyimlar</button>
+      <button class="category-btn" type="button" data-category="bags">Sumkalar</button>
+      <button class="category-btn" type="button" data-category="accessories">Aksessuarlar</button>
+    </div>
+
+    <div class="catalog-toolbar">
+      <p id="catalog-result-count">Mahsulotlar</p>
+      <select id="sort-products" aria-label="Mahsulotlarni saralash">
+        <option value="default">Odatiy tartib</option>
+        <option value="price-low">Narx: arzonidan</option>
+        <option value="price-high">Narx: qimmatidan</option>
+        <option value="name">Nomi bo‘yicha</option>
+      </select>
+    </div>
+
+    <!-- Mahsulotlar JavaScript orqali chiqariladi -->
+    <div class="product-grid" id="product-grid"></div>
+
+    <div id="empty-category" class="empty-category" hidden>
+      <h2>Bu kategoriyada mahsulot hozircha yo‘q</h2>
+      <p>Keyinroq yana tekshirib ko‘ring.</p>
+      <button class="secondary-button" id="show-all-products" type="button">
+        Barcha mahsulotlarni ko‘rish
+      </button>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <h2>STIVSHOP</h2>
+  <p>O‘zingga mos uslubni tanla.</p>
+  <p>© 2026 STIVSHOP. All rights reserved.</p>
+</footer>
+
+<!-- Mahsulot tafsilotlari -->
+<div id="product-modal" class="modal-overlay" aria-hidden="true">
+  <div class="product-modal" role="dialog" aria-modal="true" aria-label="Mahsulot tafsilotlari">
+    <button id="close-product" class="modal-close" type="button" aria-label="Mahsulot oynasini yopish">✕</button>
+
+    <div class="modal-product-image">
+      <img id="modal-image" src="" alt="Mahsulot rasmi">
+    </div>
+
+    <div class="modal-product-info">
+      <p id="modal-category" class="product-category"></p>
+      <h2 id="modal-name"></h2>
+      <p id="modal-price" class="product-price"></p>
+      <p id="modal-description" class="modal-description"></p>
+
+      <label>Razmerni tanlang:</label>
+      <div class="size-options" id="size-options">
+        <button class="size-option" type="button" data-size="39">39</button>
+        <button class="size-option" type="button" data-size="40">40</button>
+        <button class="size-option" type="button" data-size="41">41</button>
+        <button class="size-option" type="button" data-size="42">42</button>
+        <button class="size-option" type="button" data-size="43">43</button>
+        <button class="size-option" type="button" data-size="44">44</button>
+      </div>
+
+      <label>Miqdori:</label>
+      <div class="quantity-picker">
+        <button id="modal-minus" type="button" aria-label="Miqdorni kamaytirish">−</button>
+        <span id="modal-quantity">1</span>
+        <button id="modal-plus" type="button" aria-label="Miqdorni oshirish">+</button>
+      </div>
+
+      <button id="modal-add-cart" class="black-button full-width" type="button">
+        Savatga qo‘shish
+      </button>
+      <p id="modal-error" class="modal-error" role="status"></p>
+    </div>
+  </div>
+</div>
+
+<!-- Buyurtma formasi -->
+<div id="order-form" class="order-form">
+  <h2>Buyurtma berish</h2>
+  <p>Ma'lumotlaringizni kiriting.</p>
+
+  <input type="text" id="customer-name" placeholder="Ismingiz" autocomplete="name">
+  <input type="tel" id="customer-phone" placeholder="Telefon raqamingiz" autocomplete="tel">
+  <input type="text" id="customer-address" placeholder="Manzilingiz" autocomplete="street-address">
+
+  <button id="confirm-order" class="black-button full-width" type="button">
+    Buyurtmani tasdiqlash
+  </button>
+
+  <button id="cancel-order" class="secondary-button" type="button">
+    Bekor qilish
+  </button>
+</div>
+
+<!-- Demo tasdiqlash oynasi -->
+<div id="success-message" class="success-message" aria-hidden="true">
+  <div class="success-box" role="dialog" aria-modal="true" aria-label="Buyurtma holati">
+    <h2>Buyurtma ma'lumotlari tayyor!</h2>
+    <p>Hozircha buyurtma serverga yoki Telegramga yuborilmaydi.</p>
+    <button id="success-close" class="black-button" type="button">Yopish</button>
+  </div>
+</div>
+
+<script src="stivshop.js"></script>
+</body>
+</html>
