@@ -496,7 +496,7 @@ $("cancel-order")?.addEventListener("click", () => {
   $("order-form")?.classList.remove("open");
 });
 
-
+/
 $("confirm-order")?.addEventListener("click", async event => {
   event.preventDefault();
 
@@ -575,3 +575,4 @@ $("confirm-order")?.addEventListener("click", async event => {
     button.disabled = false;
   }
 });
+hozir togrimi?
