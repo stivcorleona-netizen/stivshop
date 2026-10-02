@@ -1593,3 +1593,77 @@ footer {
     opacity: 1;
   }
 }
+
+/* STIVSHOP — Product card improvements */
+
+.product-card {
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+}
+
+.product-image {
+  overflow: hidden;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.product-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.35s ease;
+}
+
+.product-card:hover .product-image img {
+  transform: scale(1.04);
+}
+
+.product-card h3 {
+  margin: 14px 0 8px;
+  font-size: 17px;
+  font-weight: 600;
+  color: #111;
+}
+
+.product-price {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111;
+}
+
+.add-cart {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 12px;
+  border: 1px solid #111;
+  border-radius: 6px;
+  background: #111;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.add-cart:hover {
+  background: #fff;
+  color: #111;
+}
+
+@media (max-width: 680px) {
+  .product-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .product-card:hover .product-image img {
+    transform: none;
+  }
+}
