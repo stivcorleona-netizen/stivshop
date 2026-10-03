@@ -496,7 +496,7 @@ $("cancel-order")?.addEventListener("click", () => {
   $("order-form")?.classList.remove("open");
 });
 
-/
+
 $("confirm-order")?.addEventListener("click", async event => {
   event.preventDefault();
 
@@ -576,3 +576,20 @@ $("confirm-order")?.addEventListener("click", async event => {
   }
 });
 hozir togrimi?
+  // ================================
+// STIVSHOP — BOSHLANG'ICH YUKLASH
+// ================================
+
+function initializeStivshop() {
+  renderProducts();
+  renderCart();
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener(
+    "DOMContentLoaded",
+    initializeStivshop
+  );
+} else {
+  initializeStivshop();
+}
