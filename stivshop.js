@@ -568,6 +568,18 @@ $("confirm-order")?.addEventListener("click", async event => {
       success.classList.add("open");
       success.setAttribute("aria-hidden", "false");
     }
+    // ================================
+// BUYURTMA TASDIQLASH OYNASINI YOPISH
+// ================================
+
+$("success-close")?.addEventListener("click", () => {
+  const success = $("success-message");
+
+  if (success) {
+    success.classList.remove("open");
+    success.setAttribute("aria-hidden", "true");
+  }
+});
   } catch (error) {
     console.error("Buyurtma xatosi:", error);
     alert("Buyurtma yuborilmadi. Server sozlamalarini tekshirish kerak.");
