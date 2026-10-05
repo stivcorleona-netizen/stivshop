@@ -1,8 +1,10 @@
+
 "use strict";
 
-// =====================================================
-// STIVSHOP — PRODUCTS
-// =====================================================
+// ================================
+// STIVSHOP — MAHSULOTLAR
+// ================================
+
 
 const products = [
   {
@@ -79,71 +81,86 @@ const products = [
   }
 ];
 
-
-// =====================================================
-// HELPERS
-// =====================================================
-
-function $(id) {
-  return document.getElementById(id);
-}
-
-function formatPrice(price) {
-  return new Intl.NumberFormat("uz-UZ").format(price) + " so'm";
-}
-
-
-// =====================================================
-// CART
-// =====================================================
-
+let activeCategory = "all";
+let selectedProduct = null;
+let selectedSize = "";
+let quantity = 1;
 let cart = [];
 
-let activeCategory = "all";
+const $ = (id) => document.getElementById(id);
 
+const formatPrice = (price) =>
+  new Intl.NumberFormat("uz-UZ").format(price) + " so'm";
 
-// =====================================================
-// RENDER PRODUCTS
-// =====================================================
+// ================================
+// SAVATNI SAQLASH VA YUKLASH
+// ================================
+
+try {
+  const savedCart = JSON.parse(
+    localStorage.getItem("stivshop-cart") || "[]"
+  );
+
+  if (Array.isArray(savedCart)) {
+    cart = savedCart.filter(item =>
+      item &&
+      Number.isFinite(Number(item.id)) &&
+      typeof item.name === "string" &&
+      Number.isFinite(Number(item.price)) &&
+      Number(item.price) >= 0 &&
+      Number.isInteger(Number(item.quantity)) &&
+      Number(item.quantity) > 0
+    ).map(item => ({
+      ...item,
+      id: Number(item.id),
+      price: Number(item.price),
+      quantity: Number(item.quantity),
+      size: String(item.size || "")
+    }));
+  }
+} catch (error) {
+  cart = [];
+}
+
+function saveCart() {
+  try {
+    localStorage.setItem("stivshop-cart", JSON.stringify(cart));
+  } catch (error) {
+    console.error("Savatni saqlab bo‘lmadi:", error);
+  }
+}
+
+// ================================
+// KATALOGNI CHIQARISH
+// ================================
 
 function renderProducts() {
   const grid = $("product-grid");
-
   if (!grid) return;
 
   const sort = $("sort-products")?.value || "default";
 
-  let filtered = products.filter(product => {
-    return (
-      activeCategory === "all" ||
-      product.category === activeCategory
-    );
-  });
+  let filtered = products.filter(product =>
+    activeCategory === "all" ||
+    product.category === activeCategory
+  );
 
   if (sort === "price-low") {
     filtered.sort((a, b) => a.price - b.price);
-  }
-
-  if (sort === "price-high") {
+  } else if (sort === "price-high") {
     filtered.sort((a, b) => b.price - a.price);
-  }
-
-  if (sort === "name") {
-    filtered.sort((a, b) =>
-      a.name.localeCompare(b.name)
-    );
+  } else if (sort === "name") {
+    filtered.sort((a, b) => a.name.localeCompare(b.name));
   }
 
   const count = $("catalog-result-count");
-
   if (count) {
     count.textContent = `${filtered.length} ta mahsulot`;
   }
 
   const empty = $("empty-category");
-
   if (empty) {
-    empty.hidden = filtered.length !== 0;
+    empty.hidden = filtered.length > 0;
   }
 
   const categoryNames = {
@@ -155,7 +172,6 @@ function renderProducts() {
 
   grid.innerHTML = filtered.map(product => `
     <article class="product-card">
-
       <div class="product-image">
         <img
           src="${product.image}"
@@ -165,7 +181,6 @@ function renderProducts() {
       </div>
 
       <div class="product-info">
-
         <p class="product-category">
           ${categoryNames[product.category] || "Mahsulot"}
         </p>
@@ -183,898 +198,392 @@ function renderProducts() {
         >
           Batafsil
         </button>
-
       </div>
-
     </article>
   `).join("");
 }
 
-
-// =====================================================
-// CATEGORY FILTER
-// =====================================================
+// ================================
+// KATEGORIYALAR
+// ================================
 
 $("category-list")?.addEventListener("click", event => {
-
   const button = event.target.closest("[data-category]");
-
   if (!button) return;
 
   activeCategory = button.dataset.category;
 
-  document
-    .querySelectorAll("#category-list [data-category]")
+  document.querySelectorAll("#category-list [data-category]")
     .forEach(item => {
-
-      item.classList.toggle(
-        "active",
-        item === button
-      );
-
+      item.classList.toggle("active", item === button);
     });
 
   renderProducts();
 });
 
-
-// =====================================================
-// SHOW ALL PRODUCTS
-// =====================================================
-
 $("show-all-products")?.addEventListener("click", () => {
-
   activeCategory = "all";
 
-  document
-    .querySelectorAll("#category-list [data-category]")
+  document.querySelectorAll("#category-list [data-category]")
     .forEach(item => {
-
       item.classList.toggle(
         "active",
         item.dataset.category === "all"
       );
-
     });
 
   renderProducts();
 });
 
+$("sort-products")?.addEventListener("change", renderProducts);
 
-// =====================================================
-// SORT PRODUCTS
-// =====================================================
+// ================================
+// MAHSULOT OYNASI
+// ================================
 
-$("sort-products")?.addEventListener(
-  "change",
-  renderProducts
-);
-
-
-// =====================================================
-// PRODUCT MODAL
-// =====================================================
-
-function openProduct(productId) {
-
-  const product = products.find(
-    item => item.id === Number(productId)
+function openProduct(id) {
+  selectedProduct = products.find(
+    product => product.id === Number(id)
   );
 
-  if (!product) return;
+  if (!selectedProduct) return;
 
-  const modal = $("product-modal");
+  selectedSize = "";
+  quantity = 1;
 
-  if (!modal) return;
-
-  const categoryNames = {
-    shoes: "Oyoq kiyimlar",
-    clothes: "Kiyimlar",
-    bags: "Sumkalar",
-    accessories: "Aksessuarlar"
-  };
-
-  const image = $("modal-product-image");
-  const category = $("modal-product-category");
-  const name = $("modal-product-name");
-  const price = $("modal-product-price");
-  const description = $("modal-product-description");
-  const addButton = $("modal-add-cart");
-
-  if (image) {
-    image.src = product.image;
-    image.alt = product.name;
+  if ($("modal-image")) {
+    $("modal-image").src = selectedProduct.image;
+    $("modal-image").alt = selectedProduct.name;
   }
 
-  if (category) {
-    category.textContent =
-      categoryNames[product.category] || "Mahsulot";
+  if ($("modal-name")) {
+    $("modal-name").textContent = selectedProduct.name;
   }
 
-  if (name) {
-    name.textContent = product.name;
+  if ($("modal-price")) {
+    $("modal-price").textContent =
+      formatPrice(selectedProduct.price);
   }
 
-  if (price) {
-    price.textContent = formatPrice(product.price);
+  if ($("modal-description")) {
+    $("modal-description").textContent =
+      selectedProduct.description;
   }
 
-  if (description) {
-    description.textContent = product.description;
+  if ($("modal-category")) {
+    $("modal-category").textContent = "Oyoq kiyimlar";
   }
 
-  if (addButton) {
-    addButton.dataset.productId = product.id;
+  if ($("modal-quantity")) {
+    $("modal-quantity").textContent = quantity;
   }
 
-  modal.classList.add("open");
-  modal.setAttribute("aria-hidden", "false");
-}
-
-
-// =====================================================
-// CLOSE PRODUCT MODAL
-// =====================================================
-
-function closeProduct() {
-
-  const modal = $("product-modal");
-
-  if (!modal) return;
-
-  modal.classList.remove("open");
-  modal.setAttribute("aria-hidden", "true");
-}
-
-
-// =====================================================
-// OPEN PRODUCT
-// =====================================================
-
-document.addEventListener("click", event => {
-
-  const button = event.target.closest(
-    "[data-open-product]"
-  );
-
-  if (!button) return;
-
-  openProduct(button.dataset.openProduct);
-});
-
-
-// =====================================================
-// CLOSE PRODUCT MODAL
-// =====================================================
-
-$("product-modal-close")?.addEventListener(
-  "click",
-  closeProduct
-);
-
-
-$("product-modal")?.addEventListener(
-  "click",
-  event => {
-
-    const modal = $("product-modal");
-
-    if (
-      modal &&
-      event.target === modal
-    ) {
-      closeProduct();
-    }
-
+  if ($("modal-error")) {
+    $("modal-error").textContent = "";
   }
-);
 
-
-// =====================================================
-// ADD TO CART
-// =====================================================
-
-function addToCart(productId) {
-
-  const product = products.find(
-    item => item.id === Number(productId)
-  );
-
-  if (!product) return;
-
-  const existing = cart.find(
-    item => item.id === product.id
-  );
-
-  if (existing) {
-
-    existing.quantity += 1;
-
-  } else {
-
-    cart.push({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.image,
-      quantity: 1,
-      size: ""
+  document.querySelectorAll("#size-options [data-size]")
+    .forEach(button => {
+      button.classList.remove("active");
     });
 
+  const modal = $("product-modal");
+
+  if (modal) {
+    modal.classList.add("open");
+    modal.setAttribute("aria-hidden", "false");
   }
-
-  renderCart();
-
-  alert(
-    `${product.name} savatga qo'shildi!`
-  );
 }
 
+function closeProduct() {
+  const modal = $("product-modal");
 
-// =====================================================
-// ADD TO CART BUTTONS
-// =====================================================
+  if (modal) {
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
+  }
+}
 
-document.addEventListener("click", event => {
-
-  const button = event.target.closest(
-    "[data-add-cart]"
-  );
-
-  if (!button) return;
-
-  addToCart(button.dataset.addCart);
+$("product-grid")?.addEventListener("click", event => {
+  const button = event.target.closest("[data-open-product]");
+  if (button) openProduct(button.dataset.openProduct);
 });
 
+$("close-product")?.addEventListener("click", closeProduct);
 
-// =====================================================
-// MODAL ADD TO CART
-// =====================================================
-
-$("modal-add-cart")?.addEventListener(
-  "click",
-  () => {
-
-    const button = $("modal-add-cart");
-
-    if (!button) return;
-
-    const productId =
-      button.dataset.productId;
-
-    if (!productId) return;
-
-    addToCart(productId);
-
+$("product-modal")?.addEventListener("click", event => {
+  if (event.target === $("product-modal")) {
     closeProduct();
   }
-);
+});
 
+// ================================
+// RAZMER TANLASH
+// ================================
 
-// =====================================================
-// RENDER CART
-// =====================================================
+$("size-options")?.addEventListener("click", event => {
+  const button = event.target.closest("[data-size]");
+  if (!button) return;
 
-function renderCart() {
+  selectedSize = button.dataset.size;
 
-  const cartItems = $("cart-items");
-  const cartCount = $("cart-count");
-  const cartTotal = $("cart-total");
+  document.querySelectorAll("#size-options [data-size]")
+    .forEach(item => {
+      item.classList.toggle("active", item === button);
+    });
 
-  const totalQuantity = cart.reduce(
-    (sum, item) =>
-      sum + item.quantity,
-    0
-  );
-
-  const totalPrice = cart.reduce(
-    (sum, item) =>
-      sum + item.price * item.quantity,
-    0
-  );
-
-  if (cartCount) {
-    cartCount.textContent =
-      totalQuantity;
+  if ($("modal-error")) {
+    $("modal-error").textContent = "";
   }
+});
 
-  if (cartTotal) {
-    cartTotal.textContent =
-      formatPrice(totalPrice);
+// ================================
+// MIQDORNI BOSHQARISH
+// ================================
+
+$("modal-minus")?.addEventListener("click", () => {
+  quantity = Math.max(1, quantity - 1);
+
+  if ($("modal-quantity")) {
+    $("modal-quantity").textContent = quantity;
   }
+});
 
-  if (!cartItems) return;
+$("modal-plus")?.addEventListener("click", () => {
+  quantity = Math.min(20, quantity + 1);
 
-  if (cart.length === 0) {
+  if ($("modal-quantity")) {
+    $("modal-quantity").textContent = quantity;
+  }
+});
 
-    cartItems.innerHTML = `
-      <p class="empty-cart">
-        Savat hozircha bo'sh.
-      </p>
-    `;
+// ================================
+// SAVATGA QO‘SHISH
+// ================================
 
+$("modal-add-cart")?.addEventListener("click", () => {
+  if (!selectedProduct) return;
+
+  if (!selectedSize) {
+    if ($("modal-error")) {
+      $("modal-error").textContent =
+        "Iltimos, razmer tanlang.";
+    }
     return;
   }
 
-  cartItems.innerHTML = cart.map(item => `
+  const existing = cart.find(item =>
+    item.id === selectedProduct.id &&
+    item.size === selectedSize
+  );
 
+  if (existing) {
+    existing.quantity += quantity;
+  } else {
+    cart.push({
+      id: selectedProduct.id,
+      name: selectedProduct.name,
+      price: selectedProduct.price,
+      image: selectedProduct.image,
+      size: selectedSize,
+      quantity: quantity
+    });
+  }
+
+  saveCart();
+  renderCart();
+  closeProduct();
+
+  const panel = $("cart-panel");
+
+  if (panel) {
+    panel.classList.add("open");
+  }
+});
+
+// ================================
+// SAVATNI KO‘RSATISH
+// ================================
+
+function renderCart() {
+  const itemsContainer = $("cart-items");
+  const countElement = $("cart-count");
+  const totalElement = $("cart-total");
+
+  const totalQuantity = cart.reduce(
+    (sum, item) => sum + item.quantity, 0
+  );
+
+  const totalPrice = cart.reduce(
+    (sum, item) => sum + item.price * item.quantity, 0
+  );
+
+  if (countElement) {
+    countElement.textContent = totalQuantity;
+  }
+
+  if (totalElement) {
+    totalElement.textContent = `Jami: ${formatPrice(totalPrice)}`;
+  }
+
+  if (!itemsContainer) return;
+
+  if (cart.length === 0) {
+    itemsContainer.innerHTML =
+      "<p>Savatingiz hozircha bo‘sh.</p>";
+    return;
+  }
+
+  itemsContainer.innerHTML = cart.map((item, index) => `
     <div class="cart-item">
-
-      <img
-        src="${item.image}"
-        alt="${item.name}"
-      >
+      <img src="${item.image}" alt="${item.name}">
 
       <div class="cart-item-info">
-
         <h4>${item.name}</h4>
+        <p>Razmer: ${item.size}</p>
+        <p>${item.quantity} × ${formatPrice(item.price)}</p>
 
-        <p>
-          ${formatPrice(item.price)}
-        </p>
-
-        <div class="cart-item-controls">
-
-          <button
-            type="button"
-            data-cart-minus="${item.id}"
-          >
-            −
-          </button>
-
-          <span>
-            ${item.quantity}
-          </span>
-
-          <button
-            type="button"
-            data-cart-plus="${item.id}"
-          >
-            +
-          </button>
-
-          <button
-            type="button"
-            data-cart-remove="${item.id}"
-          >
-            O'chirish
-          </button>
-
-        </div>
-
+        <button
+          type="button"
+          data-remove-item="${index}"
+        >
+          O‘chirish
+        </button>
       </div>
-
     </div>
-
   `).join("");
 }
 
-
-// =====================================================
-// CART + BUTTON
-// =====================================================
-
-document.addEventListener("click", event => {
-
-  const button = event.target.closest(
-    "[data-cart-plus]"
-  );
-
+$("cart-items")?.addEventListener("click", event => {
+  const button = event.target.closest("[data-remove-item]");
   if (!button) return;
 
-  const id = Number(
-    button.dataset.cartPlus
-  );
+  const index = Number(button.dataset.removeItem);
 
-  const item = cart.find(
-    product => product.id === id
-  );
+  if (!Number.isInteger(index) || index < 0 || index >= cart.length) {
+    return;
+  }
 
-  if (!item) return;
-
-  item.quantity += 1;
-
+  cart.splice(index, 1);
+  saveCart();
   renderCart();
 });
 
+// SAVATNI OCHISH VA YOPISH
 
-// =====================================================
-// CART MINUS BUTTON
-// =====================================================
+$("open-cart")?.addEventListener("click", () => {
+  $("cart-panel")?.classList.add("open");
+});
 
-document.addEventListener("click", event => {
+$("close-cart")?.addEventListener("click", () => {
+  $("cart-panel")?.classList.remove("open");
+});
 
-  const button = event.target.closest(
-    "[data-cart-minus]"
-  );
+// ================================
+// BUYURTMA FORMASI
+// ================================
 
-  if (!button) return;
-
-  const id = Number(
-    button.dataset.cartMinus
-  );
-
-  const item = cart.find(
-    product => product.id === id
-  );
-
-  if (!item) return;
-
-  item.quantity -= 1;
-
-  if (item.quantity <= 0) {
-
-    cart = cart.filter(
-      product => product.id !== id
-    );
-
+$("order-button")?.addEventListener("click", () => {
+  if (cart.length === 0) {
+    alert("Bro, avval savatga mahsulot qo‘shing.");
+    return;
   }
 
-  renderCart();
+  $("order-form")?.classList.add("open");
+});
+
+$("cancel-order")?.addEventListener("click", () => {
+  $("order-form")?.classList.remove("open");
 });
 
 
-// =====================================================
-// REMOVE FROM CART
-// =====================================================
+$("confirm-order")?.addEventListener("click", async event => {
+  event.preventDefault();
 
-document.addEventListener("click", event => {
+  const name = $("customer-name")?.value.trim();
+  const phone = $("customer-phone")?.value.trim();
+  const address = $("customer-address")?.value.trim();
 
-  const button = event.target.closest(
-    "[data-cart-remove]"
-  );
-
-  if (!button) return;
-
-  const id = Number(
-    button.dataset.cartRemove
-  );
-
-  cart = cart.filter(
-    item => item.id !== id
-  );
-
-  renderCart();
-});
-
-
-// =====================================================
-// OPEN CART
-// =====================================================
-
-$("cart-button")?.addEventListener(
-  "click",
-  () => {
-
-    const cartPanel = $("cart-panel");
-
-    if (!cartPanel) return;
-
-    cartPanel.classList.add("open");
-    cartPanel.setAttribute(
-      "aria-hidden",
-      "false"
-    );
+  if (!name || !phone || !address) {
+    alert("Iltimos, barcha maydonlarni to‘ldiring.");
+    return;
   }
-);
 
-
-// =====================================================
-// CLOSE CART
-// =====================================================
-
-$("close-cart")?.addEventListener(
-  "click",
-  () => {
-
-    const cartPanel = $("cart-panel");
-
-    if (!cartPanel) return;
-
-    cartPanel.classList.remove("open");
-    cartPanel.setAttribute(
-      "aria-hidden",
-      "true"
-    );
+  if (cart.length === 0) {
+    alert("Savatingiz bo‘sh.");
+    return;
   }
-);
 
+  const button = $("confirm-order");
+  if (button.disabled) return;
 
-// =====================================================
-// OPEN ORDER FORM
-// =====================================================
+  button.disabled = true;
 
-$("order-button")?.addEventListener(
-  "click",
-  () => {
-
-    if (cart.length === 0) {
-
-      alert(
-        "Avval savatga mahsulot qo'shing."
-      );
-
-      return;
-    }
-
-    const orderForm = $("order-form");
-
-    if (!orderForm) return;
-
-    orderForm.classList.add("open");
-    orderForm.setAttribute(
-      "aria-hidden",
-      "false"
+  try {
+    const total = cart.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
     );
-  }
-);
 
-
-// =====================================================
-// CLOSE ORDER FORM
-// =====================================================
-
-$("order-close")?.addEventListener(
-  "click",
-  () => {
-
-    const orderForm = $("order-form");
-
-    if (!orderForm) return;
-
-    orderForm.classList.remove("open");
-    orderForm.setAttribute(
-      "aria-hidden",
-      "true"
-    );
-  }
-);
-
-
-// =====================================================
-// SEND ORDER TO TELEGRAM
-// =====================================================
-
-$("confirm-order")?.addEventListener(
-  "click",
-  async event => {
-
-    event.preventDefault();
-
-    const name =
-      $("customer-name")?.value.trim();
-
-    const phone =
-      $("customer-phone")?.value.trim();
-
-    const address =
-      $("customer-address")?.value.trim();
-
-    // ---------------------------------------------
-    // CHECK FORM
-    // ---------------------------------------------
-
-    if (!name || !phone || !address) {
-
-      alert(
-        "Iltimos, barcha maydonlarni to'ldiring."
-      );
-
-      return;
-    }
-
-    // ---------------------------------------------
-    // CHECK CART
-    // ---------------------------------------------
-
-    if (cart.length === 0) {
-
-      alert(
-        "Savatingiz bo'sh."
-      );
-
-      return;
-    }
-
-    const button =
-      $("confirm-order");
-
-    if (!button) return;
-
-    if (button.disabled) return;
-
-    button.disabled = true;
-
-    button.textContent =
-      "Yuborilmoqda...";
-
-    try {
-
-      // -----------------------------------------
-      // TOTAL
-      // -----------------------------------------
-
-      const total = cart.reduce(
-        (sum, item) =>
-          sum +
-          item.price *
-          item.quantity,
-        0
-      );
-
-      // -----------------------------------------
-      // SEND TO CLOUDFLARE WORKER
-      // -----------------------------------------
-
-      const response = await fetch(
-        "https://holy-hall-af55tivshop-orders.stivcorleona.workers.dev/",
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
-
-          body: JSON.stringify({
-
-            name: name,
-
-            phone: phone,
-
-            address: address,
-
-            items: cart.map(item => ({
-              name: item.name,
-              size: item.size || "",
-              quantity: item.quantity,
-              price: item.price
-            })),
-
-            total: total
-
-          })
-        }
-      );
-
-      // -----------------------------------------
-      // RESPONSE
-      // -----------------------------------------
-
-      const result =
-        await response.json();
-
-      if (
-        !response.ok ||
-        !result.success
-      ) {
-
-        throw new Error(
-          result.error ||
-          "Buyurtma yuborilmadi."
-        );
+    const response = await fetch(
+      "https://holy-hall-af55tivshop-orders.stivcorleona.workers.dev/",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          phone,
+          address,
+          items: cart.map(item => ({
+            name: item.name,
+            size: item.size || "",
+            quantity: item.quantity,
+            price: item.price
+          })),
+          total
+        })
       }
-
-      // -----------------------------------------
-      // SUCCESS
-      // -----------------------------------------
-
-      $("order-form")?.classList.remove(
-        "open"
-      );
-
-      $("order-form")?.setAttribute(
-        "aria-hidden",
-        "true"
-      );
-
-      $("cart-panel")?.classList.remove(
-        "open"
-      );
-
-      $("cart-panel")?.setAttribute(
-        "aria-hidden",
-        "true"
-      );
-
-      // Empty cart
-      cart = [];
-
-      renderCart();
-
-      // Clear form
-      if ($("customer-name")) {
-        $("customer-name").value = "";
-      }
-
-      if ($("customer-phone")) {
-        $("customer-phone").value = "";
-      }
-
-      if ($("customer-address")) {
-        $("customer-address").value = "";
-      }
-
-      // -----------------------------------------
-      // SHOW SUCCESS MESSAGE
-      // -----------------------------------------
-
-      const success =
-        $("success-message");
-
-      if (success) {
-
-        success.classList.add("open");
-        success.classList.add("active");
-
-        success.setAttribute(
-          "aria-hidden",
-          "false"
-        );
-
-        success.style.display =
-          "flex";
-      }
-
-    } catch (error) {
-
-      console.error(
-        "Buyurtma xatosi:",
-        error
-      );
-
-      alert(
-        "Buyurtma yuborilmadi. Server sozlamalarini tekshirish kerak."
-      );
-
-    } finally {
-
-      button.disabled = false;
-
-      button.textContent =
-        "Buyurtma berish";
-    }
-  }
-);
-
-
-// =====================================================
-// SUCCESS MODAL — CLOSE
-// =====================================================
-
-document.addEventListener(
-  "click",
-  event => {
-
-    if (
-      !event.target.closest(
-        "#success-close"
-      )
-    ) {
-      return;
-    }
-
-    const success =
-      $("success-message");
-
-    if (!success) return;
-
-    success.classList.remove(
-      "open",
-      "active"
     );
 
-    success.setAttribute(
-      "aria-hidden",
-      "true"
-    );
+    const result = await response.json();
 
-    success.style.display =
-      "none";
-  }
-);
-
-
-// =====================================================
-// SUCCESS MODAL — CLICK OUTSIDE
-// =====================================================
-
-$("success-message")?.addEventListener(
-  "click",
-  event => {
-
-    const success =
-      $("success-message");
-
-    if (!success) return;
-
-    if (
-      event.target === success
-    ) {
-
-      success.classList.remove(
-        "open",
-        "active"
-      );
-
-      success.setAttribute(
-        "aria-hidden",
-        "true"
-      );
-
-      success.style.display =
-        "none";
-    }
-  }
-);
-
-
-// =====================================================
-// ESC KEY — CLOSE MODALS
-// =====================================================
-
-document.addEventListener(
-  "keydown",
-  event => {
-
-    if (event.key !== "Escape") {
-      return;
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || "Buyurtma yuborilmadi.");
     }
 
-    closeProduct();
+    alert("Buyurtmangiz Telegram’ga yuborildi! 🎉");
 
-    const success =
-      $("success-message");
+    $("order-form")?.classList.remove("open");
+    $("cart-panel")?.classList.remove("open");
 
+    cart.length = 0;
+    renderCart();
+
+    $("customer-name").value = "";
+    $("customer-phone").value = "";
+    $("customer-address").value = "";
+
+    const success = $("success-message");
     if (success) {
-
-      success.classList.remove(
-        "open",
-        "active"
-      );
-
-      success.setAttribute(
-        "aria-hidden",
-        "true"
-      );
-
-      success.style.display =
-        "none";
+      success.classList.add("open");
+      success.setAttribute("aria-hidden", "false");
     }
+    // ================================
+// BUYURTMA TASDIQLASH OYNASINI YOPISH
+// ================================
 
+$("success-close")?.addEventListener("click", () => {
+  const success = $("success-message");
+
+  if (success) {
+    success.classList.remove("open");
+    success.setAttribute("aria-hidden", "true");
   }
-);
-
-
-// =====================================================
-// INITIALIZE STIVSHOP
-// =====================================================
-
-function initializeStivshop() {
-
-  renderProducts();
-
-  renderCart();
-
-}
-
-
-// =====================================================
-// START
-// =====================================================
-
-if (
-  document.readyState ===
-  "loading"
-) {
-
-  document.addEventListener(
-    "DOMContentLoaded",
-    initializeStivshop
-  );
-
-} else {
-
-  initializeStivshop();
-
-}
+});
+  } catch (error) {
+    console.error("Buyurtma xatosi:", error);
+    alert("Buyurtma yuborilmadi. Server sozlamalarini tekshirish kerak.");
+  } finally {
+    button.disabled = false;
+  }
+});
