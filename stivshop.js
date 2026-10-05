@@ -575,10 +575,7 @@ $("confirm-order")?.addEventListener("click", async event => {
     button.disabled = false;
   }
 });
-hozir togrimi?
-  // ================================
-// STIVSHOP — BOSHLANG'ICH YUKLASH
-// ================================
+
 
 function initializeStivshop() {
   renderProducts();
