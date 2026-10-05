@@ -497,93 +497,282 @@ $("cancel-order")?.addEventListener("click", () => {
 });
 
 
-$("confirm-order")?.addEventListener("click", async event => {
-  event.preventDefault();
-
-  const name = $("customer-name")?.value.trim();
-  const phone = $("customer-phone")?.value.trim();
-  const address = $("customer-address")?.value.trim();
-
-  if (!name || !phone || !address) {
-    alert("Iltimos, barcha maydonlarni to‘ldiring.");
-    return;
-  }
-
-  if (cart.length === 0) {
-    alert("Savatingiz bo‘sh.");
-    return;
-  }
-
-  const button = $("confirm-order");
-  if (button.disabled) return;
-
-  button.disabled = true;
-
-  try {
-    const total = cart.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    );
-
-    const response = await fetch(
-      "https://holy-hall-af55tivshop-orders.stivcorleona.workers.dev/",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          phone,
-          address,
-          items: cart.map(item => ({
-            name: item.name,
-            size: item.size || "",
-            quantity: item.quantity,
-            price: item.price
-          })),
-          total
-        })
-      }
-    );
-
-    const result = await response.json();
-
-    if (!response.ok || !result.success) {
-      throw new Error(result.error || "Buyurtma yuborilmadi.");
-    }
-
-    alert("Buyurtmangiz Telegram’ga yuborildi! 🎉");
-
-    $("order-form")?.classList.remove("open");
-    $("cart-panel")?.classList.remove("open");
-
-    cart.length = 0;
-    renderCart();
-
-    $("customer-name").value = "";
-    $("customer-phone").value = "";
-    $("customer-address").value = "";
-
-    const success = $("success-message");
-    if (success) {
-      success.classList.add("open");
-      success.setAttribute("aria-hidden", "false");
-    }
-    // ================================
-// BUYURTMA TASDIQLASH OYNASINI YOPISH
+// ================================
+// BUYURTMA YUBORISH
 // ================================
 
-$("success-close")?.addEventListener("click", () => {
-  const success = $("success-message");
+$("confirm-order")?.addEventListener(
+  "click",
+  async event => {
 
-  if (success) {
+    event.preventDefault();
+
+    const name =
+      $("customer-name")?.value.trim();
+
+    const phone =
+      $("customer-phone")?.value.trim();
+
+    const address =
+      $("customer-address")?.value.trim();
+
+    // Maydonlarni tekshirish
+    if (!name || !phone || !address) {
+      alert("Iltimos, barcha maydonlarni to‘ldiring.");
+      return;
+    }
+
+    // Savatni tekshirish
+    if (cart.length === 0) {
+      alert("Savatingiz bo‘sh.");
+      return;
+    }
+
+    const button = $("confirm-order");
+
+    if (!button || button.disabled) {
+      return;
+    }
+
+    button.disabled = true;
+    button.textContent = "Yuborilmoqda...";
+
+    try {
+
+      // Umumiy summa
+      const total = cart.reduce(
+        (sum, item) =>
+          sum + item.price * item.quantity,
+        0
+      );
+
+      // Cloudflare Worker
+      const response = await fetch(
+        "https://holy-hall-af55tivshop-orders.stivcorleona.workers.dev/",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json"
+          },
+
+          body: JSON.stringify({
+            name,
+            phone,
+            address,
+
+            items: cart.map(item => ({
+              name: item.name,
+              size: item.size || "",
+              quantity: item.quantity,
+              price: item.price
+            })),
+
+            total
+          })
+        }
+      );
+
+      const result = await response.json();
+
+      if (
+        !response.ok ||
+        !result.success
+      ) {
+        throw new Error(
+          result.error ||
+          "Buyurtma yuborilmadi."
+        );
+      }
+
+      // ============================
+      // BUYURTMA MUVAFFAQIYATLI
+      // ============================
+
+      $("order-form")?.classList.remove("open");
+
+      $("cart-panel")?.classList.remove("open");
+
+      // Savatni tozalash
+      cart = [];
+
+      saveCart();
+      renderCart();
+
+      // Formani tozalash
+      if ($("customer-name")) {
+        $("customer-name").value = "";
+      }
+
+      if ($("customer-phone")) {
+        $("customer-phone").value = "";
+      }
+
+      if ($("customer-address")) {
+        $("customer-address").value = "";
+      }
+
+      // ============================
+      // SUCCESS OYNASINI OCHISH
+      // ============================
+
+      const success = $("success-message");
+
+      if (success) {
+
+        success.classList.add("open");
+
+        success.setAttribute(
+          "aria-hidden",
+          "false"
+        );
+
+        success.style.display = "flex";
+      }
+
+    } catch (error) {
+
+      console.error(
+        "Buyurtma xatosi:",
+        error
+      );
+
+      alert(
+        "Buyurtma yuborilmadi. Server sozlamalarini tekshirish kerak."
+      );
+
+    } finally {
+
+      button.disabled = false;
+
+      button.textContent =
+        "Buyurtmani tasdiqlash";
+    }
+
+  }
+);
+
+
+// ================================
+// SUCCESS OYNASINI YOPISH
+// ================================
+
+document.addEventListener(
+  "click",
+  event => {
+
+    if (
+      !event.target.closest("#success-close")
+    ) {
+      return;
+    }
+
+    const success =
+      $("success-message");
+
+    if (!success) {
+      return;
+    }
+
     success.classList.remove("open");
-    success.setAttribute("aria-hidden", "true");
+    success.classList.remove("active");
+
+    success.setAttribute(
+      "aria-hidden",
+      "true"
+    );
+
+    success.style.display = "none";
   }
-});
-  } catch (error) {
-    console.error("Buyurtma xatosi:", error);
-    alert("Buyurtma yuborilmadi. Server sozlamalarini tekshirish kerak.");
-  } finally {
-    button.disabled = false;
+);
+
+
+// ================================
+// SUCCESS OYNASI — TASHQARISINI BOSISH
+// ================================
+
+$("success-message")?.addEventListener(
+  "click",
+  event => {
+
+    const success =
+      $("success-message");
+
+    if (!success) {
+      return;
+    }
+
+    if (event.target === success) {
+
+      success.classList.remove("open");
+      success.classList.remove("active");
+
+      success.setAttribute(
+        "aria-hidden",
+        "true"
+      );
+
+      success.style.display = "none";
+    }
   }
-});
+);
+
+
+// ================================
+// ESC BILAN YOPISH
+// ================================
+
+document.addEventListener(
+  "keydown",
+  event => {
+
+    if (event.key !== "Escape") {
+      return;
+    }
+
+    const success =
+      $("success-message");
+
+    if (!success) {
+      return;
+    }
+
+    success.classList.remove("open");
+    success.classList.remove("active");
+
+    success.setAttribute(
+      "aria-hidden",
+      "true"
+    );
+
+    success.style.display = "none";
+  }
+);
+
+
+// ================================
+// START
+// ================================
+
+function initializeStivshop() {
+
+  renderProducts();
+
+  renderCart();
+
+}
+
+if (
+  document.readyState === "loading"
+) {
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    initializeStivshop
+  );
+
+} else {
+
+  initializeStivshop();
+
+}
