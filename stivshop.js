@@ -575,7 +575,15 @@ $("confirm-order")?.addEventListener("click", async event => {
     button.disabled = false;
   }
 });
+$("success-close")?.addEventListener("click", function () {
+  const success = $("success-message");
 
+  if (!success) return;
+
+  success.classList.remove("open");
+  success.classList.remove("active");
+  success.setAttribute("aria-hidden", "true");
+});
 
 function initializeStivshop() {
   renderProducts();
