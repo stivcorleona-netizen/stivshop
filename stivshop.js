@@ -577,3 +577,15 @@ $("confirm-order")?.addEventListener("click", async event => {
     button.disabled = false;
   }
 });
+// ================================
+// YOPISH TUGMASI
+// ================================
+
+$("success-close")?.addEventListener("click", () => {
+  const success = $("success-message");
+
+  if (!success) return;
+
+  success.classList.remove("open");
+  success.setAttribute("aria-hidden", "true");
+});
