@@ -564,12 +564,10 @@ $("confirm-order")?.addEventListener("click", async event => {
     $("customer-address").value = "";
 
     const success = $("success-message");
-  
     if (success) {
       success.classList.add("open");
       success.setAttribute("aria-hidden", "false");
     }
-   
   } catch (error) {
     console.error("Buyurtma xatosi:", error);
     alert("Buyurtma yuborilmadi. Server sozlamalarini tekshirish kerak.");
@@ -578,23 +576,6 @@ $("confirm-order")?.addEventListener("click", async event => {
   }
 });
 
-// ================================
-// YOPISH TUGMASI
-// ================================
-
-$("success-close")?.addEventListener("click", () => {
-  const success = $("success-message");
-
-  if (!success) return;
-
-  success.classList.remove("open");
-  success.setAttribute("aria-hidden", "true");
-});
-
-
-// ================================
-// BOSHLANG‘ICH YUKLASH
-// ================================
 
 function initializeStivshop() {
   renderProducts();
