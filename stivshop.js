@@ -577,6 +577,7 @@ $("confirm-order")?.addEventListener("click", async event => {
     button.disabled = false;
   }
 });
+
 // ================================
 // YOPISH TUGMASI
 // ================================
@@ -589,3 +590,22 @@ $("success-close")?.addEventListener("click", () => {
   success.classList.remove("open");
   success.setAttribute("aria-hidden", "true");
 });
+
+
+// ================================
+// BOSHLANG‘ICH YUKLASH
+// ================================
+
+function initializeStivshop() {
+  renderProducts();
+  renderCart();
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener(
+    "DOMContentLoaded",
+    initializeStivshop
+  );
+} else {
+  initializeStivshop();
+}
