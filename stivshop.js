@@ -575,18 +575,3 @@ $("confirm-order")?.addEventListener("click", async event => {
     button.disabled = false;
   }
 });
-
-
-function initializeStivshop() {
-  renderProducts();
-  renderCart();
-}
-
-if (document.readyState === "loading") {
-  document.addEventListener(
-    "DOMContentLoaded",
-    initializeStivshop
-  );
-} else {
-  initializeStivshop();
-}
