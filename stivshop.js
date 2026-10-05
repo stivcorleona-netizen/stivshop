@@ -564,18 +564,7 @@ $("confirm-order")?.addEventListener("click", async event => {
     $("customer-address").value = "";
 
     const success = $("success-message");
-     // ================================
-// BUYURTMA TASDIQLASH OYNASINI YOPISH
-// ================================
-
-$("success-close")?.addEventListener("click", () => {
-  const success = $("success-message");
-
-  if (success) {
-    success.classList.remove("open");
-    success.setAttribute("aria-hidden", "true");
-  }
-});
+  
     if (success) {
       success.classList.add("open");
       success.setAttribute("aria-hidden", "false");
