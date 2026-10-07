@@ -89,6 +89,13 @@ let cart = [];
 
 const $ = (id) => document.getElementById(id);
 
+const categoryNames = {
+  shoes: "Oyoq kiyimlar",
+  clothes: "Kiyimlar",
+  bags: "Sumkalar",
+  accessories: "Aksessuarlar"
+};
+
 const formatPrice = (price) =>
   new Intl.NumberFormat("uz-UZ").format(price) + " so'm";
 
@@ -162,13 +169,6 @@ function renderProducts() {
   if (empty) {
     empty.hidden = filtered.length > 0;
   }
-
-  const categoryNames = {
-    shoes: "Oyoq kiyimlar",
-    clothes: "Kiyimlar",
-    bags: "Sumkalar",
-    accessories: "Aksessuarlar"
-  };
 
   grid.innerHTML = filtered.map(product => `
     <article class="product-card">
@@ -271,7 +271,8 @@ function openProduct(id) {
   }
 
   if ($("modal-category")) {
-    $("modal-category").textContent = "Oyoq kiyimlar";
+    $("modal-category").textContent =
+      categoryNames[selectedProduct.category] || "Mahsulot";
   }
 
   if ($("modal-quantity")) {
@@ -516,6 +517,9 @@ $("confirm-order")?.addEventListener(
     const address =
       $("customer-address")?.value.trim();
 
+    const location =
+      $("customer-location")?.value.trim() || "";
+
     // Maydonlarni tekshirish
     if (!name || !phone || !address) {
       alert("Iltimos, barcha maydonlarni to‘ldiring.");
@@ -560,6 +564,7 @@ $("confirm-order")?.addEventListener(
             name,
             phone,
             address,
+            location,
 
             items: cart.map(item => ({
               name: item.name,
@@ -573,7 +578,16 @@ $("confirm-order")?.addEventListener(
         }
       );
 
-      const result = await response.json();
+      let result;
+
+      try {
+        result = await response.json();
+      } catch (error) {
+        result = {
+          success: false,
+          error: "Server javobi noto‘g‘ri formatda qaytdi."
+        };
+      }
 
       if (
         !response.ok ||
@@ -610,6 +624,14 @@ $("confirm-order")?.addEventListener(
 
       if ($("customer-address")) {
         $("customer-address").value = "";
+      }
+
+      if ($("customer-location")) {
+        $("customer-location").value = "";
+      }
+
+      if ($("location-status")) {
+        $("location-status").textContent = "";
       }
 
       // ============================
@@ -775,4 +797,53 @@ if (
 
   initializeStivshop();
 
+}
+// ================================
+// 📍 MIJOZ LOKATSIYASINI OLISH
+// ================================
+
+const getLocationButton = document.getElementById("get-location");
+const locationStatus = document.getElementById("location-status");
+const addressInput = document.getElementById("customer-address");
+const locationInput = document.getElementById("customer-location");
+
+if (getLocationButton) {
+  getLocationButton.addEventListener("click", () => {
+    if (!navigator.geolocation) {
+      if (locationStatus) {
+        locationStatus.textContent = "Lokatsiya funksiyasi bu qurilmada ishlamaydi.";
+      }
+      return;
+    }
+
+    if (locationStatus) {
+      locationStatus.textContent = "📍 Lokatsiya aniqlanmoqda...";
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+
+        if (locationInput) {
+          locationInput.value = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+        }
+
+        if (locationStatus) {
+          locationStatus.textContent = "✅ Lokatsiya olindi!";
+        }
+      },
+      () => {
+        if (locationStatus) {
+          locationStatus.textContent =
+            "❌ Lokatsiyani olishga ruxsat berilmadi.";
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  });
 }
