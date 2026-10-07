@@ -130,6 +130,13 @@
   <input type="text" id="customer-name" placeholder="Ismingiz" autocomplete="name">
   <input type="tel" id="customer-phone" placeholder="Telefon raqamingiz" autocomplete="tel">
   <input type="text" id="customer-address" placeholder="Manzilingiz" autocomplete="street-address">
+  <input type="hidden" id="customer-location" value="">
+
+  <button id="get-location" class="secondary-button full-width" type="button">
+    📍 Lokatsiyani yuborish
+  </button>
+
+  <p id="location-status" class="location-status"></p>
 
   <button id="confirm-order" class="black-button full-width" type="button">
     Buyurtmani tasdiqlash
